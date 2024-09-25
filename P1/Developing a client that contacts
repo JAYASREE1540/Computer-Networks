@@ -1,0 +1,75 @@
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+public class DNSClient {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter a hostname to resolve: ");
+        String hostname = scanner.nextLine();
+
+        try {
+            // Resolve the hostname to an IP address using the default DNS server
+            InetAddress ip = InetAddress.getByName(hostname);
+            System.out.println("IP address of " + hostname + ": " + ip.getHostAddress());
+        } catch (UnknownHostException e) {
+            System.out.println("Host not found: " + e.getMessage());
+        } finally {
+            scanner.close();
+        }
+    }
+}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+
+int main() {
+    char hostname[256];
+    struct addrinfo hints, *res;
+    int status;
+    char ipstr[INET6_ADDRSTRLEN];
+
+    // Get hostname from user
+    printf("Enter a hostname to resolve: ");
+    scanf("%s", hostname);
+
+    // Set up hints
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC; // AF_INET for IPv4, AF_INET6 for IPv6, or AF_UNSPEC for both
+    hints.ai_socktype = SOCK_STREAM;
+
+    // Get address info
+    if ((status = getaddrinfo(hostname, NULL, &hints, &res)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        return 1;
+    }
+
+    printf("IP addresses for %s:\n\n", hostname);
+
+    // Loop through all the results and print the IP addresses
+    for (struct addrinfo *p = res; p != NULL; p = p->ai_next) {
+        void *addr;
+        char *ipver;
+
+        // Get the pointer to the address itself (different fields in IPv4 and IPv6)
+        if (p->ai_family == AF_INET) { // IPv4
+            struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+            addr = &(ipv4->sin_addr);
+            ipver = "IPv4";
+        } else { // IPv6
+            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
+            addr = &(ipv6->sin6_addr);
+            ipver = "IPv6";
+        }
+
+        // Convert the IP address to a string and print it
+        inet_ntop(p->ai_family, addr, ipstr, sizeof(ipstr));
+        printf("%s: %s\n", ipver, ipstr);
+    }
+
+    freeaddrinfo(res); // Free the linked list
+    return 0;
+}
