@@ -1,0 +1,41 @@
+import java.io.*;
+import java.net.*;
+
+public class EchoServer {
+    public static void main(String[] args) throws IOException {
+        int port = 12345; // Specify the port to listen on
+        ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Server is listening on port " + port);
+
+        while (true) {
+            Socket clientSocket = serverSocket.accept(); // Accept client connections
+            new Thread(new EchoClientHandler(clientSocket)).start(); // Handle client in a separate thread
+        }
+    }
+}
+
+class EchoClientHandler implements Runnable {
+    private Socket clientSocket;
+
+    public EchoClientHandler(Socket socket) {
+        this.clientSocket = socket;
+    }
+
+    @Override
+    public void run() {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            String clientMessage;
+            
+            while ((clientMessage = in.readLine()) != null) {
+                System.out.println("Received from client: " + clientMessage);
+                out.println("Echo: " + clientMessage); // Echo the received message back to the client
+            }
+
+            clientSocket.close();
+        } catch (IOException e) {
+            System.out.println("Exception caught: " + e.getMessage());
+        }
+    }
+}
